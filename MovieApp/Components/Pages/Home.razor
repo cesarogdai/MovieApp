@@ -1,0 +1,45 @@
+﻿@page "/"
+
+<PageTitle>Home</PageTitle>
+
+<h1>CineMatch</h1>
+
+@if (_loading)
+{
+    <p>Loading movies</p>
+}
+else
+{
+    @foreach (var movie in _movies)
+    {
+        <MovieCard 
+            @key="@movie.TmdbId"
+            TmdbId="@movie.TmdbId"
+            Year="@movie.Year"
+            Overview="@movie.Overview"
+            Rating="@_ratings.GetValueOrDefault(movie.TmdbId)"
+            OnRate="() => _ratings[movie.TmdbId] = 5"
+            />
+
+    }
+}
+
+@code {
+    private bool _loading = true;
+    private List<MovieSummary> _movies = new();
+    private Dictionary<int, int>  _ratings = new();                                                                                            
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(800);
+        _movies = new()
+        {
+            new(603, "The Matrix", 1999, "A hacker learns the truth about his reality"),
+            new(27205, "Inception", 2010, "A thief steals secrets trough dream-sharing"),
+            new(157336, "Interstellar", 2014, "A team travels through a wormhole in space.")
+        };
+        _loading = false;
+    }
+
+    private record MovieSummary(int TmdbId, string Title, int Year, string Overview);
+}

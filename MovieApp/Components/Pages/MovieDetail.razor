@@ -1,0 +1,28 @@
+﻿@page "/movies/{TmdbId:int}"
+
+<PageTitle>Movie @TmdbId</PageTitle>
+
+<h1>Movie @TmdbId</h1>
+
+<p>OnInitialized fired @_initializedCount time(s)</p>
+<p>OnParameterSet fired @_paramsSetCount time(s)</p>
+
+
+@code {
+    [Parameter]
+    public int TmdbId { get; set; }
+
+    private int _initializedCount;
+    private int _paramsSetCount;
+
+    protected override void OnInitialized()
+    {
+        _initializedCount++;
+    }
+
+    protected override void OnParametersSet()
+    {
+        _paramsSetCount++;    
+    }
+
+}

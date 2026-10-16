@@ -1,0 +1,48 @@
+# .NET build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.dll
+*.pdb
+*.exe
+
+# IDE folders
+.vs/
+.idea/
+*.user
+*.suo
+*.userprefs
+
+# Solution / project artifacts
+*.suo
+*.user
+*.cache
+
+# Local config and secrets — never commit these
+appsettings.Development.json
+appsettings.*.local.json
+*.secrets.json
+.env
+.env.local
+
+# Test results and coverage
+[Tt]est[Rr]esult*/
+coverage/
+*.coverage
+*.coveragexml
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+!packages/repositories.config
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
