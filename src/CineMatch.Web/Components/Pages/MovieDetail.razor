@@ -1,0 +1,167 @@
+﻿@page "/movies/{TmdbId:int}"
+@inject IMovieService MovieService
+@inject NavigationManager Nav
+
+<PageTitle>@(_movie?.Title ?? "Movie") . CineMatch</PageTitle>
+
+
+@if (_loading)
+{
+    <p class="status">Loading movie...</p>
+}
+else if (_movie is null)
+{
+    <div class="status">
+        <p>Movie not found.</p>
+        <button class="btn-primary" @onclick="GoBack">Back to Discover</button>
+    </div>
+}
+else
+{
+    <button class="btn-back" @onclick="GoBack">Back</button>
+
+    <div class="detail">
+        <div class="detail-poster">
+            @if(!string.IsNullOrEmpty(_movie.PosterPath))
+            {
+                <img src="https:///image.tmdb.org/t/p/w500@(_movie.PosterPath)" alt="@_movie.Title poster" />
+            }
+            else
+            {
+                <div class="poster-placeholder">🎬</div>
+            }
+        </div>
+
+        <div class="detail-info">
+            <h1>@_movie.Title</h1>
+
+            <div class="detail-meta">
+                @if (_movie.ReleaseDate is not null)
+                {
+                    <span>@_movie.ReleaseDate.Value.Year</span>
+                }
+                @if (_movie.VoteAverage > 0)
+                {
+                    <span class="vote">* @_movie.VoteAverage.ToString("0.0")</span>
+                }
+            </div>
+
+            @if (_movie.Genres.Any())
+            {
+                <div class="detail-genres">
+                    @foreach (var g in _movie.Genres)
+                    {
+                        <span class="genre-chip">@g.Name</span>
+                    }
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(_movie.Overview))
+            {
+                <p class="detail-overview">@_movie.Overview</p>
+            }
+
+            <h2>Where to watch (MX)</h2>
+
+            @if (_loadingProviders)
+            {
+                <p class="status">Loading providers...</p>
+            }
+            else if (_providers.Count == 0)
+            {
+                <p class="status">Not available on streaming in Mexico.</p>
+            }
+            else
+            {
+                @if (_subscriptionProviders.Any())
+                {
+                    <div class="provider-group">
+                        <h3>Includes with subscription</h3>
+                        <div class="provider-logos">
+                            @foreach (var p in _subscriptionProviders)
+                            {
+                                <img src="https://image.tmdb.org/t/p/w92@(p.LogoPath)" alt="@p.Name" title="@p.Name" />
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (_rentProviders.Any())
+                {
+                    <div class="provider-group">
+                        <h3>Rent</h3>
+                        <div class="provider-logos">
+                            @foreach (var p in _rentProviders)
+                            {
+                                <img src="https://image.tmdb.org/t/p/w92@(p.LogoPath)" alt="@p.Name" title="@p.Name" />
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if(_buyProviders.Any())
+                {
+                    <div class="provider-group">
+                        <h3>Buy</h3>
+                        <div class="provider-logos">
+                            @foreach (var p in _buyProviders)
+                            {
+                                <img src="https://image.tmdb.org/t/p/w92@(p.LogoPath)" alt="@p.Name" title="@p.Name" />
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+}
+
+
+@code {
+    [Parameter]
+    public int TmdbId { get; set; }
+
+    private bool _loading = true;
+    private bool _loadingProviders = true;
+    private Movie? _movie;
+    private IReadOnlyList<WatchProvider> _providers = Array.Empty<WatchProvider>();
+
+    private IEnumerable<WatchProvider> _subscriptionProviders => _providers.Where(p => p.Type == "filtrate");
+    private IEnumerable<WatchProvider> _rentProviders => _providers.Where(p => p.Type == "rent");
+    private IEnumerable<WatchProvider> _buyProviders => _providers.Where(p => p.Type == "buy");
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _loadingProviders = true;
+        _movie = null;
+        _providers = Array.Empty<WatchProvider>();
+
+        try
+        {
+            _movie = await MovieService.GetByTmdbIdAsync(TmdbId);
+        }
+        finally
+        {
+            _loading = false;
+        }
+
+        if (_movie is not null)
+        {
+            try
+            {
+                _providers = await MovieService.GetWatchProvidersAsync(TmdbId);
+            }
+            catch
+            {
+                _providers = Array.Empty<WatchProvider>();
+            }
+            finally
+            {
+                _loadingProviders = false;
+            }
+        }
+    }
+
+    private void GoBack() => Nav.NavigateTo("/");
+}

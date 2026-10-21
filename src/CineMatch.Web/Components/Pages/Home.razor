@@ -1,0 +1,174 @@
+﻿@page "/"
+@inject IMovieService MovieService
+
+<PageTitle>CineMatch</PageTitle>
+
+<section class="filters">
+    <div class="search-row">
+        <input type="text"
+               placeholder="Search movies…"
+               @bind="_searchTerm"
+               @bind:event="oninput"
+               @onkeyup="HandleKeyUp" />
+        <button class="btn-primary" @onclick="SearchAsync" disabled="@_searching">
+            @(_searching ? "Searching…" : "Search")
+        </button>
+    </div>
+
+    <div class="filter-row">
+        <div class="filter-group">
+            <label>Genre</label>
+            <select @bind="_selectedGenreId">
+                <option value="">All</option>
+                <option value="28">Action</option>
+                <option value="35">Comedy</option>
+                <option value="18">Drama</option>
+                <option value="27">Horror</option>
+                <option value="9648">Mystery</option>
+                <option value="10749">Romance</option>
+                <option value="878">Science Fiction</option>
+                <option value="53">Thriller</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label>Streaming (MX)</label>
+            <select @bind="_selectedProviderId">
+                <option value="">Any</option>
+                <option value="8">Netflix</option>
+                <option value="119">Prime Video</option>
+                <option value="337">Disney+</option>
+                <option value="1899">Max</option>
+                <option value="350">Apple TV+</option>
+                <option value="531">Paramount+</option>
+                <option value="619">Star+</option>
+            </select>
+        </div>
+
+        <button class="btn-primary" @onclick="ApplyFilters" disabled="@_applying">
+            @(_applying ? "Applying…" : "Apply Filters")
+        </button>
+    </div>
+</section>
+
+@if (_loading)
+{
+    <div class="grid">
+        @for (int i = 0; i < 6; i++)
+        {
+            <div class="skeleton-card"></div>
+        }
+    </div>
+}
+else if (_applying || _searching)
+{
+    <p class="status">Loading…</p>
+}
+else if (_error is not null)
+{
+    <p class="status error">@_error</p>
+}
+else if (_movies.Count == 0)
+{
+    <p class="status">No movies found. Try a different search or filter.</p>
+}
+else
+{
+    <div class="grid">
+        @foreach (var movie in _movies)
+        {
+            <MovieCard @key="movie.TmdbId"
+                       TmdbId="@movie.TmdbId"
+                       Title="@movie.Title"
+                       Year="@(movie.ReleaseDate?.Year ?? 0)"
+                       Overview="@(movie.Overview ?? string.Empty)"
+                       PosterPath="@movie.PosterPath"
+                       VoteAverage="@movie.VoteAverage"
+                       Rating="@_ratings.GetValueOrDefault(movie.TmdbId)"
+                       OnRate="() => _ratings[movie.TmdbId] = 5" />
+        }
+    </div>
+}
+
+@code {
+    private bool _loading = true;
+    private bool _searching;
+    private bool _applying;
+    private string? _error;
+    private string _searchTerm = string.Empty;
+    private string _selectedGenreId = string.Empty;
+    private string _selectedProviderId = string.Empty;
+    private IReadOnlyList<Movie> _movies = Array.Empty<Movie>();
+    private Dictionary<int, int> _ratings = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _movies = await MovieService.GetFeaturedMoviesAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = $"Failed to load movies: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task ApplyFilters()
+    {
+        _applying = true;
+        _error = null;
+
+        try
+        {
+            var genre = string.IsNullOrWhiteSpace(_selectedGenreId) ? null : _selectedGenreId;
+            var provider = string.IsNullOrWhiteSpace(_selectedProviderId) ? null : _selectedProviderId;
+
+            if (genre is null && provider is null)
+            {
+                _movies = await MovieService.GetFeaturedMoviesAsync();
+            }
+            else
+            {
+                _movies = await MovieService.DiscoverAsync(genre, provider);
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = $"Filter failed: {ex.Message}";
+        }
+        finally
+        {
+            _applying = false;
+        }
+    }
+
+    private async Task SearchAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_searchTerm)) return;
+
+        _searching = true;
+        _error = null;
+
+        try
+        {
+            _movies = await MovieService.SearchAsync(_searchTerm);
+        }
+        catch (Exception ex)
+        {
+            _error = $"Search failed: {ex.Message}";
+        }
+        finally
+        {
+            _searching = false;
+        }
+    }
+
+    private async Task HandleKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await SearchAsync();
+    }
+}

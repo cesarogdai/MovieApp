@@ -1,0 +1,45 @@
+﻿<article class="card">
+    <a href="/movies/@TmdbId" class="card-link">
+        @if (!string.IsNullOrEmpty(PosterPath))
+        {
+            <img class="card-poster"
+                 src="https://image.tmdb.org/t/p/w342@(PosterPath)"
+                 alt="@Title poster"
+                 loading="lazy" />
+        }
+        else
+        {
+            <div class="card-poster placeholder">🎬</div>
+        }
+    </a>
+    <div class="card-body">
+        <h3 class="card-title">
+            <a href="/movies/@TmdbId">@Title</a>
+        </h3>
+        <div class="card-meta">
+            <span>@Year</span>
+            @if (VoteAverage > 0)
+            {
+                <span class="vote">★ @VoteAverage.ToString("0.0")</span>
+            }
+        </div>
+        <div class="card-stars" title="Your rating">
+            <button class="star" @onclick="OnRateClicked">@Stars</button>
+        </div>
+    </div>
+</article>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public int TmdbId { get; set; }
+    [Parameter] public int Year { get; set; }
+    [Parameter] public string Overview { get; set; } = string.Empty;
+    [Parameter] public string? PosterPath { get; set; }
+    [Parameter] public double VoteAverage { get; set; }
+    [Parameter] public EventCallback OnRate { get; set; }
+    [Parameter] public int Rating { get; set; }
+
+    private string Stars => new string('★', Rating) + new string('☆', 5 - Rating);
+
+    private async Task OnRateClicked() => await OnRate.InvokeAsync();
+}

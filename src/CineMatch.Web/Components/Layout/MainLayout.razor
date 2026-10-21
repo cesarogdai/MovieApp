@@ -1,0 +1,20 @@
+﻿@inherits LayoutComponentBase
+
+<div class="app">
+    <header class="app-header">
+        <a href="/" class="brand">CineMatch</a>
+        <nav class="app-nav">
+            <a href="/">Discover</a>
+            <a href="/movies/603">Test Detail</a>
+            <a href="/reports">Reports</a>
+        </nav>
+    </header>
+
+    <main class="app-main">
+        @Body
+    </main>
+
+    <footer class="app-footer">
+        <p>Built with Blazor + TMDB · @DateTime.Now.Year</p>
+    </footer>
+</div>
